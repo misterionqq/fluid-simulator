@@ -20,6 +20,10 @@ using namespace std;
 
 namespace Pepega {
 
+    //==================================//
+    // Base class for fluid simulations //
+    //==================================//
+
     class fluid_base {
     public:
         virtual void next(std::optional<std::reference_wrapper<std::ostream>> out) = 0;
@@ -29,6 +33,9 @@ namespace Pepega {
         virtual ~fluid_base() = default;
     };
 
+    //================================================//
+    // Template class for a specific fluid simulation //
+    //================================================//
     template <typename p_t, typename velocity_t, typename velocity_flow_t, int value_N, int value_M>
     class fluid : public fluid_base {
     private:
@@ -195,6 +202,7 @@ namespace Pepega {
         void next(std::optional<std::reference_wrapper<std::ostream>> out) override {
             p_t total_delta_p = 0ll;
 
+            // Apply gravity to downward velocities
             for (size_t x = 0; x < N; ++x) {
                 for (size_t y = 0; y < M; ++y) {
                     if (field[x][y] == '#')
@@ -205,6 +213,7 @@ namespace Pepega {
             }
 
             old_p = p;
+            // Calculate pressure changes based on pressure differences
             for (size_t x = 0; x < N; ++x) {
                 for (size_t y = 0; y < M; ++y) {
                     if (field[x][y] == '#')
@@ -231,6 +240,8 @@ namespace Pepega {
 
             velocity_flow = {};
             bool prop = false;
+
+            // Propagate flow until no further changes occur
             do {
                 UT += 2;
                 prop = false;
@@ -246,6 +257,7 @@ namespace Pepega {
                 }
             } while (prop);
 
+            // Update velocities and pressures based on flow
             for (size_t x = 0; x < N; ++x) {
                 for (size_t y = 0; y < M; ++y) {
                     if (field[x][y] == '#')
@@ -254,7 +266,7 @@ namespace Pepega {
                         velocity_t old_v = velocity.get(x, y, dx, dy);
                         velocity_flow_t new_v = velocity_flow.get(x, y, dx, dy);
                         if (old_v > 0ll) {
-                            //assert(velocity_t(new_v) <= old_v); // this buddy ruins DOUBLE
+                            //assert(velocity_t(new_v) <= old_v); // this buddy ruins DOUBLE :D :D :D
 
                             velocity.get(x, y, dx, dy) = velocity_t(new_v);
                             auto force = p_t(old_v - velocity_t(new_v)) * rho[(int) field[x][y]];
@@ -274,6 +286,8 @@ namespace Pepega {
 
             UT += 2;
             prop = false;
+
+            // Propagate movement or stopping based on probability
             for (size_t x = 0; x < N; ++x) {
                 for (size_t y = 0; y < M; ++y) {
                     if (field[x][y] != '#' && last_use[x][y] != UT) {
@@ -287,6 +301,7 @@ namespace Pepega {
                 }
             }
 
+            // Output the field if an output stream is provided
             if (prop && out) {
                 for (int i = 0; i < N; ++i) {
                     for (int j = 0; j < M; ++j) {
@@ -299,7 +314,8 @@ namespace Pepega {
         }
 
         void load(std::ifstream& file) override {
-            auto loadArray = [&]<typename T, int N, int M>(Array<T, N, M>& arr, int n, int m) {
+            // Helper lambda to load a 2D array from a file
+            auto array_load = [&]<typename T, int N, int M>(Array<T, N, M>& arr, int n, int m) {
                 arr.init(n, m);
                 for (int i = 0; i < arr.N; ++i) {
                     for (int j = 0; j < arr.M; ++j) {
@@ -318,7 +334,8 @@ namespace Pepega {
                 }
             };
 
-            auto loadArrayOfArrays = [&]<typename T, int N, int M> (Array<std::array<T, 4>, N, M>& arr, int n, int m) {
+            // Helper lambda to load a 2D array of arrays from a file
+            auto load_field = [&]<typename T, int N, int M> (Array<std::array<T, 4>, N, M>& arr, int n, int m) {
                 arr.init(n, m);
                 for (int i = 0; i < arr.N; ++i) {
                     for (int j = 0; j < arr.M; ++j) {
@@ -334,15 +351,16 @@ namespace Pepega {
                 throw std::invalid_argument("Something went wrong with file opening\n");
             }
             file >> N >> M >> UT;
-            loadArray(field, N, M);
-            loadArray(last_use, N, M);
-            loadArray(p, N, M);
-            loadArrayOfArrays(velocity.v, N, M);
+            array_load(field, N, M); // Load field data
+            array_load(last_use, N, M); // Load last use data
+            array_load(p, N, M); // Load pressure data
+            load_field(velocity.v, N, M); // Load velocity data
 
             init();
         }
 
         void save(std::ofstream &file) override {
+            // Helper lambda to save a 2D array to a file
             auto array_save = [&]<typename T, int N, int M>(Array<T, N, M>& arr) {
                 for (int i = 0; i < arr.N; ++i) {
                     for (int j = 0; j < arr.M; ++j) {
@@ -360,9 +378,11 @@ namespace Pepega {
                 throw std::invalid_argument("file is not open");
             }
             file << N << " " << M << " " << UT << std::endl;
-            array_save(field);
-            array_save(last_use);
-            array_save(p);
+            array_save(field); // Save field data
+            array_save(last_use); // Save last use data
+            array_save(p); // Save pressure data
+
+            // Save velocity data
             for (int i = 0; i < velocity.v.N; ++i) {
                 for (int j = 0; j < velocity.v.M; ++j) {
                     file << velocity.v[i][j][0] << " "
