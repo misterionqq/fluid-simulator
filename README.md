@@ -69,4 +69,22 @@
    ./fluid-simulator --input-file=../input.txt --save-file=../saved-position.txt --p-type="FIXED(32,7)" --v-type="FAST_FIXED(52,13)" --v-flow-type="DOUBLE" 
    ```
 
-
+Пример последовательной работы:
+- Запуск жидкости
+   ```bash
+   ./fluid-simulator --input-file=../input.txt --save-file=../saved-position.txt --p-type="FIXED(32,7)" --v-type="FIXED(32,7)" --v-flow-type="FIXED(32,7)"
+   ```
+- Ctrl+C (Control+C) для остановки программы, далее Q для выхода. Текущая позиция сохранится в файле
+- Запуск с сохраненной позиции
+   ```bash
+   ./fluid-simulator --input-file=../saved-position.txt --save-file=../saved-position.txt --p-type="FIXED(32,7)" --v-type="FIXED(32,7)" --v-flow-type="FIXED(32,7)"
+   ```
+- Ctrl+C (Control+C) для остановки программы, далее Q для выхода. Текущая позиция сохранится в файле
+- Очистка сохранения 
+   ```bash
+   ./cleaner
+   ```
+- Запуск с другими параметрами
+   ```bash
+   ./fluid-simulator --input-file=../input.txt --save-file=../saved-position.txt --p-type="FIXED(32,7)" --v-type="FAST_FIXED(52,13)" --v-flow-type="DOUBLE" 
+   ```
